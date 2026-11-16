@@ -19,7 +19,7 @@ jobs:
           test -f app/build.gradle.kts
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app build.gradle.kts settings.gradle.kts gradle.properties .gitignore .github/workflows/android.yml
+          git add app build.gradle.kts settings.gradle.kts gradle.properties .gitignore
           if ! git diff --cached --quiet; then
             git commit -m "feat: materialize KADO 0.1.0 Android sources"
             git push origin HEAD:main
