@@ -1,0 +1,43 @@
+name: Android debug APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand and publish KADO source files
+        run: |
+          set -euo pipefail
+          cat bootstrap/kado-0{1..5}.b64 | base64 -d > /tmp/kado-source.tar.xz
+          echo "9bd1fc94502ae82fb46e47e85d6711a9b4ef706e804ea51eb8c2fa74473f253c  /tmp/kado-source.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/kado-source.tar.xz
+          test -f app/build.gradle.kts
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app build.gradle.kts settings.gradle.kts gradle.properties .gitignore .github/workflows/android.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: materialize KADO 0.1.0 Android sources"
+            git push origin HEAD:main
+          fi
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Test and assemble debug
+        run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KADO-0.1.0-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
